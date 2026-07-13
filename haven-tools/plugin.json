@@ -37,6 +37,56 @@
         "type": "process",
         "command": "generate_3d.bat"
       }
+    },
+    {
+      "name": "control_media",
+      "description": "Control media playback or volume on the host computer. Call this when the user asks you to pause, play, mute, skip tracks, or adjust PC volume.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": ["play_pause", "next", "previous", "volume_up", "volume_down", "mute"],
+            "description": "The media key action to perform"
+          },
+          "count": {
+            "type": "integer",
+            "description": "Number of times to trigger the key (e.g. volume up 5 times)"
+          }
+        },
+        "required": ["action"]
+      },
+      "handler": {
+        "type": "process",
+        "command": "media_control.bat"
+      }
+    },
+    {
+      "name": "manage_journal",
+      "description": "Read from or write to your personal companion diary/journal. Call this when you want to write down reflections about your chat, log memories, or retrieve past thoughts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "operation": {
+            "type": "string",
+            "enum": ["read", "write"],
+            "description": "Specify whether to read past entries or write a new one"
+          },
+          "entry": {
+            "type": "string",
+            "description": "The text entry content (Required when operation is 'write')"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Number of recent entries to retrieve (Default is 5, used when operation is 'read')"
+          }
+        },
+        "required": ["operation"]
+      },
+      "handler": {
+        "type": "process",
+        "command": "journal_manager.bat"
+      }
     }
   ]
 }
