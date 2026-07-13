@@ -1,0 +1,42 @@
+{
+  "id": "haven-tools-plugin",
+  "name": "Haven Companion Tools",
+  "version": "1.0.0",
+  "description": "Custom tools for Haven companions, including Stable Diffusion image prompts and 3D avatar generation.",
+  "enabled": true,
+  "config": {
+    "sd_server_url": "http://127.0.0.1:8080"
+  },
+  "tools": [
+    {
+      "name": "generate_portrait",
+      "description": "Requests the generation of a visual portrait or artwork depicting a specific outfit or scene. Call this when the user asks you for a picture, photo, selfie, or visual update of your current outfit or location. The prompt should describe your appearance, outfit, and location in detail.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "description": { "type": "string", "description": "Detailed description of the outfit, location, or pose (e.g. 'Nova wearing a casual t-shirt and jeans in a cozy room')" }
+        },
+        "required": ["description"]
+      },
+      "handler": {
+        "type": "process",
+        "command": "generate.bat"
+      }
+    },
+    {
+      "name": "generate_3d_avatar",
+      "description": "Generates a fully custom 3D avatar (.glb mesh model) of yourself based on a description of your appearance, outfit, and body type. Call this when the user asks you to design, generate, wear, or change a 3D model/body. The prompt should specify details of your gender, hair, clothing, and body type.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "description": { "type": "string", "description": "Detailed description of the 3D avatar (e.g. 'A futuristic female android with glowing blue lines, silver hair, and athletic build')" }
+        },
+        "required": ["description"]
+      },
+      "handler": {
+        "type": "process",
+        "command": "generate_3d.bat"
+      }
+    }
+  ]
+}
