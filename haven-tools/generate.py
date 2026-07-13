@@ -46,7 +46,15 @@ def main():
         sd_url = f"{sd_server_url.rstrip('/')}/v1/images/generations"
 
         # Determine size (vertical aspect ratio for full body reduces anatomical warping)
-        size = "512x768" if is_full_body else "512x512"
+        widescreen_keywords = ["widescreen", "16:9", "1024x768", "1920x1080", "wallpaper", "desktop", "landscape"]
+        is_widescreen = any(kw in description.lower() for kw in widescreen_keywords)
+
+        if is_widescreen:
+            size = "640x360"
+        elif is_full_body:
+            size = "512x768"
+        else:
+            size = "512x512"
         
         neg_prompt = "easynegative, bad-hands-5, text, watermark, bad anatomy, duplicate, split screen, multi panel, list, borders, signature, extra limbs"
         if is_full_body:
@@ -93,6 +101,21 @@ def main():
         from PIL import Image
         
         image_bytes = base64.b64decode(b64_string)
+
+        if is_widescreen:
+            try:
+                import cv2
+                import numpy as np
+                nparr = np.frombuffer(image_bytes, np.uint8)
+                img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                if img is not None:
+                    # Upscale by 2x to 1280x720 using Lanczos
+                    img_upscaled = cv2.resize(img, (1280, 720), interpolation=cv2.INTER_LANCZOS4)
+                    _, encoded_img = cv2.imencode(".png", img_upscaled)
+                    image_bytes = encoded_img.tobytes()
+            except Exception as ex:
+                print(f"Widescreen upscale error: {str(ex)}", file=sys.stderr)
+
         enhanced_bytes = restore_faces(image_bytes)
         
         with Image.open(io.BytesIO(enhanced_bytes)) as img:
