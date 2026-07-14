@@ -30,10 +30,27 @@ def main():
         ]
         is_full_body = any(kw in description.lower() for kw in full_body_keywords)
 
+        # Look up custom SD config from companion profile JSON
+        companions_dir = r"C:\Users\admin\haven-server\personality\companions"
+        sd_config = {}
+        if os.path.exists(companions_dir):
+            for file_name in os.listdir(companions_dir):
+                if file_name.endswith(".json"):
+                    try:
+                        with open(os.path.join(companions_dir, file_name), "r", encoding="utf-8") as f:
+                            comp_data = json.load(f)
+                            comp_name = comp_data.get("name", "").strip()
+                            if comp_name and comp_name.lower() in description.lower():
+                                sd_config = comp_data.get("sdConfig", {})
+                                break
+                    except Exception:
+                        pass
+
         # 4. Construct prompt with embedded seed parameter for stable-diffusion.cpp
         seed_val = random.randint(1, 2000000000)
         
-        prompt_parts = ["digital art portrait, highly detailed", description]
+        pos_prefix = sd_config.get("positive_prompt_prefix", "digital art portrait, highly detailed").strip()
+        prompt_parts = [pos_prefix, description]
         if is_full_body:
             if "full body" not in description.lower() and "full-body" not in description.lower():
                 prompt_parts.append("full body shot, standing upright, head-to-toe portrait")
@@ -56,7 +73,7 @@ def main():
         else:
             size = "512x512"
         
-        neg_prompt = "easynegative, bad-hands-5, text, watermark, bad anatomy, duplicate, split screen, multi panel, list, borders, signature, extra limbs"
+        neg_prompt = sd_config.get("negative_prompt", "easynegative, bad-hands-5, text, watermark, bad anatomy, duplicate, split screen, multi panel, list, borders, signature, extra limbs").strip()
         if is_full_body:
             neg_prompt += ", cropped, cut off, out of frame, close up portrait, head shot"
 
