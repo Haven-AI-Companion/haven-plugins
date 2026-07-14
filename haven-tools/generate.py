@@ -93,8 +93,8 @@ def main():
             method="POST"
         )
         
-        # Query local server with a 300-second timeout
-        with urllib.request.urlopen(req, timeout=300) as response:
+        # Query local server with a 1800-second (30-minute) timeout
+        with urllib.request.urlopen(req, timeout=1800) as response:
             resp_data = json.loads(response.read().decode("utf-8"))
             
         data_list = resp_data.get("data", [])
