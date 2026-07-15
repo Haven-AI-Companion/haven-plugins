@@ -31,20 +31,42 @@ def main():
         is_full_body = any(kw in description.lower() for kw in full_body_keywords)
 
         # Look up custom SD config from companion profile JSON
-        companions_dir = r"C:\Users\admin\haven-server\personality\companions"
+        config = args.get("config", {})
+        companions_dir = config.get("server_companions_dir", r"C:\Users\admin\haven-server\personality\companions")
         sd_config = {}
         if os.path.exists(companions_dir):
-            for file_name in os.listdir(companions_dir):
-                if file_name.endswith(".json"):
-                    try:
-                        with open(os.path.join(companions_dir, file_name), "r", encoding="utf-8") as f:
-                            comp_data = json.load(f)
-                            comp_name = comp_data.get("name", "").strip()
-                            if comp_name and comp_name.lower() in description.lower():
-                                sd_config = comp_data.get("sdConfig", {})
-                                break
-                    except Exception:
-                        pass
+            # Check local override first
+            local_dir = os.path.join(companions_dir, "local")
+            found = False
+            if os.path.exists(local_dir):
+                for file_name in os.listdir(local_dir):
+                    if file_name.endswith(".json"):
+                        try:
+                            with open(os.path.join(local_dir, file_name), "r", encoding="utf-8") as f:
+                                comp_data = json.load(f)
+                                comp_name = comp_data.get("name", "").strip()
+                                if comp_name and comp_name.lower() in description.lower():
+                                    sd_config = comp_data.get("sdConfig", {})
+                                    print(f"[generate.py] Found LOCAL override sdConfig for {comp_name}!")
+                                    found = True
+                                    break
+                        except Exception:
+                            pass
+            
+            # Fallback to default companions if not found in local overrides
+            if not found:
+                for file_name in os.listdir(companions_dir):
+                    if file_name.endswith(".json"):
+                        try:
+                            with open(os.path.join(companions_dir, file_name), "r", encoding="utf-8") as f:
+                                comp_data = json.load(f)
+                                comp_name = comp_data.get("name", "").strip()
+                                if comp_name and comp_name.lower() in description.lower():
+                                    sd_config = comp_data.get("sdConfig", {})
+                                    print(f"[generate.py] Found default sdConfig override for {comp_name}!")
+                                    break
+                        except Exception:
+                            pass
 
         # 4. Construct prompt with embedded seed parameter for stable-diffusion.cpp
         seed_val = random.randint(1, 2000000000)
