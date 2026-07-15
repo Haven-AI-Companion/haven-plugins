@@ -47,7 +47,7 @@ def main():
                                 comp_name = comp_data.get("name", "").strip()
                                 if comp_name and comp_name.lower() in description.lower():
                                     sd_config = comp_data.get("sdConfig", {})
-                                    print(f"[generate.py] Found LOCAL override sdConfig for {comp_name}!")
+                                    print(f"[generate.py] Found LOCAL override sdConfig for {comp_name}!", file=sys.stderr)
                                     found = True
                                     break
                         except Exception:
@@ -63,7 +63,7 @@ def main():
                                 comp_name = comp_data.get("name", "").strip()
                                 if comp_name and comp_name.lower() in description.lower():
                                     sd_config = comp_data.get("sdConfig", {})
-                                    print(f"[generate.py] Found default sdConfig override for {comp_name}!")
+                                    print(f"[generate.py] Found default sdConfig override for {comp_name}!", file=sys.stderr)
                                     break
                         except Exception:
                             pass
