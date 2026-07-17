@@ -35,6 +35,10 @@ def main():
         companions_dir = config.get("server_companions_dir", r"C:\Users\admin\haven-server\personality\companions")
         sd_config = {}
         clothing_state = ""
+        current_outfit = ""
+        current_location = ""
+        current_mood = ""
+        
         if os.path.exists(companions_dir):
             # Check local override first
             local_dir = os.path.join(companions_dir, "local")
@@ -44,11 +48,14 @@ def main():
                     if file_name.endswith(".json"):
                         try:
                             with open(os.path.join(local_dir, file_name), "r", encoding="utf-8") as f:
-                                comp_data = json.load(f)
-                                comp_name = comp_data.get("name", "").strip()
+                                data = json.load(f)
+                                comp_name = data.get("name", "").strip()
                                 if comp_name and comp_name.lower() in description.lower():
-                                    sd_config = comp_data.get("sdConfig", {})
-                                    clothing_state = comp_data.get("clothingState", "").strip().lower()
+                                    sd_config = data.get("sdConfig", {})
+                                    clothing_state = data.get("clothingState", "").strip().lower()
+                                    current_outfit = data.get("currentOutfit", "").strip()
+                                    current_location = data.get("currentLocation", "").strip()
+                                    current_mood = data.get("currentMood", "").strip()
                                     print(f"[generate.py] Found LOCAL override sdConfig for {comp_name}! clothingState={clothing_state}", file=sys.stderr)
                                     found = True
                                     break
@@ -61,11 +68,14 @@ def main():
                     if file_name.endswith(".json"):
                         try:
                             with open(os.path.join(companions_dir, file_name), "r", encoding="utf-8") as f:
-                                comp_data = json.load(f)
-                                comp_name = comp_data.get("name", "").strip()
+                                data = json.load(f)
+                                comp_name = data.get("name", "").strip()
                                 if comp_name and comp_name.lower() in description.lower():
-                                    sd_config = comp_data.get("sdConfig", {})
-                                    clothing_state = comp_data.get("clothingState", "").strip().lower()
+                                    sd_config = data.get("sdConfig", {})
+                                    clothing_state = data.get("clothingState", "").strip().lower()
+                                    current_outfit = data.get("currentOutfit", "").strip()
+                                    current_location = data.get("currentLocation", "").strip()
+                                    current_mood = data.get("currentMood", "").strip()
                                     print(f"[generate.py] Found default sdConfig override for {comp_name}! clothingState={clothing_state}", file=sys.stderr)
                                     break
                         except Exception:
@@ -84,6 +94,22 @@ def main():
                 prompt_parts.extend([tw.strip() for tw in trigger_words if tw.strip()])
             else:
                 prompt_parts.append(trigger_words.strip())
+
+        # Inject active location, outfit, and mood from companion state if not already described
+        if current_outfit:
+            if current_outfit.lower() not in description.lower() and current_outfit.lower() not in pos_prefix.lower():
+                prompt_parts.append(f"wearing {current_outfit}")
+                print(f"[generate.py] Injected active outfit: '{current_outfit}'", file=sys.stderr)
+
+        if current_location:
+            if current_location.lower() not in description.lower() and current_location.lower() not in pos_prefix.lower():
+                prompt_parts.append(f"in/at {current_location}")
+                print(f"[generate.py] Injected active location: '{current_location}'", file=sys.stderr)
+
+        if current_mood:
+            if current_mood.lower() not in description.lower() and current_mood.lower() not in pos_prefix.lower():
+                prompt_parts.append(f"{current_mood} expression")
+                print(f"[generate.py] Injected active mood: '{current_mood}'", file=sys.stderr)
 
         prompt_parts.append(description)
         if is_full_body:
