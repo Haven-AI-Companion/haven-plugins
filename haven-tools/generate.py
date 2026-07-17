@@ -34,6 +34,7 @@ def main():
         config = args.get("config", {})
         companions_dir = config.get("server_companions_dir", r"C:\Users\admin\haven-server\personality\companions")
         sd_config = {}
+        clothing_state = ""
         if os.path.exists(companions_dir):
             # Check local override first
             local_dir = os.path.join(companions_dir, "local")
@@ -47,7 +48,8 @@ def main():
                                 comp_name = comp_data.get("name", "").strip()
                                 if comp_name and comp_name.lower() in description.lower():
                                     sd_config = comp_data.get("sdConfig", {})
-                                    print(f"[generate.py] Found LOCAL override sdConfig for {comp_name}!", file=sys.stderr)
+                                    clothing_state = comp_data.get("clothingState", "").strip().lower()
+                                    print(f"[generate.py] Found LOCAL override sdConfig for {comp_name}! clothingState={clothing_state}", file=sys.stderr)
                                     found = True
                                     break
                         except Exception:
@@ -63,7 +65,8 @@ def main():
                                 comp_name = comp_data.get("name", "").strip()
                                 if comp_name and comp_name.lower() in description.lower():
                                     sd_config = comp_data.get("sdConfig", {})
-                                    print(f"[generate.py] Found default sdConfig override for {comp_name}!", file=sys.stderr)
+                                    clothing_state = comp_data.get("clothingState", "").strip().lower()
+                                    print(f"[generate.py] Found default sdConfig override for {comp_name}! clothingState={clothing_state}", file=sys.stderr)
                                     break
                         except Exception:
                             pass
@@ -72,11 +75,36 @@ def main():
         seed_val = random.randint(1, 2000000000)
         
         pos_prefix = sd_config.get("positive_prompt_prefix", "digital art portrait, highly detailed").strip()
-        prompt_parts = [pos_prefix, description]
+        prompt_parts = [pos_prefix]
+        
+        # Inject custom trigger words if set in companion config
+        trigger_words = sd_config.get("trigger_words", "")
+        if trigger_words:
+            if isinstance(trigger_words, list):
+                prompt_parts.extend([tw.strip() for tw in trigger_words if tw.strip()])
+            else:
+                prompt_parts.append(trigger_words.strip())
+
+        prompt_parts.append(description)
         if is_full_body:
             if "full body" not in description.lower() and "full-body" not in description.lower():
                 prompt_parts.append("full body shot, standing upright, head-to-toe portrait")
+
+        # Inject clothing state into prompt if set in companion profile
+        naked_states = {"naked", "nude", "undressed", "topless", "fully nude", "fully naked", "bare"}
+        if clothing_state and any(s in clothing_state for s in naked_states):
+            # Only inject if not already described in the description or prefix
+            already_mentioned = any(s in description.lower() or s in pos_prefix.lower() for s in naked_states)
+            if not already_mentioned:
+                prompt_parts.append("nude, naked, no clothes, bare skin, nudity")
+                print(f"[generate.py] clothingState='{clothing_state}' -> injected nudity into prompt", file=sys.stderr)
         
+        # Inject custom LoRAs if set in companion config
+        loras = sd_config.get("loras", {})
+        if isinstance(loras, dict):
+            for lora_name, lora_weight in loras.items():
+                prompt_parts.append(f"<lora:{lora_name}:{lora_weight}>")
+
         full_prompt = ", ".join(prompt_parts) + f"<sd_cpp_extra_args>{{\"seed\": {seed_val}}}</sd_cpp_extra_args>"
 
         # 5. Query the running Stable Diffusion server (loaded from plugin config)
