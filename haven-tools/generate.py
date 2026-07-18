@@ -187,7 +187,8 @@ def main():
         uploads_dir = r"C:\Users\admin\haven-server\wwwroot\uploads"
         os.makedirs(uploads_dir, exist_ok=True)
         
-        image_name = f"gen_{uuid.uuid4().hex}.webp"
+        image_name = args.get("target_filename", f"gen_{uuid.uuid4().hex}.webp")
+        image_name = os.path.basename(image_name)
         filepath = os.path.join(uploads_dir, image_name)
         
         import io

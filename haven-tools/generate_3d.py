@@ -32,7 +32,8 @@ def main():
         # Save output inside haven-server uploads folder
         uploads_dir = r"C:\Users\admin\haven-server\wwwroot\uploads"
         os.makedirs(uploads_dir, exist_ok=True)
-        filename = f"avatar_{uuid.uuid4().hex}.glb"
+        filename = args.get("target_filename", f"avatar_{uuid.uuid4().hex}.glb")
+        filename = os.path.basename(filename)
         filepath = os.path.join(uploads_dir, filename)
 
         model_url = None
