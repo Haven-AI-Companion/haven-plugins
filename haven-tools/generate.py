@@ -188,8 +188,12 @@ def main():
         os.makedirs(uploads_dir, exist_ok=True)
         
         image_name = args.get("target_filename", f"gen_{uuid.uuid4().hex}.webp")
-        image_name = os.path.basename(image_name)
-        filepath = os.path.join(uploads_dir, image_name)
+        filepath = os.path.abspath(os.path.join(uploads_dir, image_name))
+        if not filepath.startswith(os.path.abspath(uploads_dir)):
+            # Security: fallback to safe basename if path traversal detected
+            image_name = os.path.basename(image_name)
+            filepath = os.path.join(uploads_dir, image_name)
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
         
         import io
         from PIL import Image

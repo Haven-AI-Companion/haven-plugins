@@ -33,8 +33,12 @@ def main():
         uploads_dir = r"C:\Users\admin\haven-server\wwwroot\uploads"
         os.makedirs(uploads_dir, exist_ok=True)
         filename = args.get("target_filename", f"avatar_{uuid.uuid4().hex}.glb")
-        filename = os.path.basename(filename)
-        filepath = os.path.join(uploads_dir, filename)
+        filepath = os.path.abspath(os.path.join(uploads_dir, filename))
+        if not filepath.startswith(os.path.abspath(uploads_dir)):
+            # Security: fallback to safe basename if path traversal detected
+            filename = os.path.basename(filename)
+            filepath = os.path.join(uploads_dir, filename)
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
         model_url = None
 
