@@ -84,7 +84,7 @@ def main():
         # 4. Construct prompt with embedded seed parameter for stable-diffusion.cpp
         seed_val = random.randint(1, 2000000000)
         
-        pos_prefix = sd_config.get("positive_prompt_prefix", "digital art portrait, highly detailed").strip()
+        pos_prefix = sd_config.get("positive_prompt_prefix", "digital art portrait, highly detailed, well-proportioned, realistic body proportions, symmetrical body, detailed anatomy").strip()
         prompt_parts = [pos_prefix]
         
         # Inject custom trigger words if set in companion config
@@ -119,7 +119,6 @@ def main():
         # Inject clothing state into prompt if set in companion profile
         naked_states = {"naked", "nude", "undressed", "topless", "fully nude", "fully naked", "bare"}
         if clothing_state and any(s in clothing_state for s in naked_states):
-            # Only inject if not already described in the description or prefix
             already_mentioned = any(s in description.lower() or s in pos_prefix.lower() for s in naked_states)
             if not already_mentioned:
                 prompt_parts.append("nude, naked, no clothes, bare skin, nudity")
@@ -143,13 +142,15 @@ def main():
         is_widescreen = any(kw in description.lower() for kw in widescreen_keywords)
 
         if is_widescreen:
-            size = "640x360"
+            size = "768x448"
         elif is_full_body:
             size = "512x768"
         else:
             size = "512x512"
         
-        neg_prompt = sd_config.get("negative_prompt", "easynegative, bad-hands-5, text, watermark, bad anatomy, duplicate, split screen, multi panel, list, borders, signature, extra limbs").strip()
+        custom_neg = sd_config.get("negative_prompt", "").strip()
+        default_neg = "easynegative, bad-hands-5, text, watermark, bad anatomy, deformed, disfigured, poorly drawn face, mutated hands, extra limbs, mutated limbs, missing limbs, floating limbs, disconnected limbs, malformed hands, long neck, long body, body dysmorphia, disproportionate, duplicate, split screen, multi panel, list, borders, signature"
+        neg_prompt = f"{default_neg}, {custom_neg}" if custom_neg else default_neg
         if is_full_body:
             neg_prompt += ", cropped, cut off, out of frame, close up portrait, head shot"
 
