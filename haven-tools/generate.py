@@ -38,6 +38,8 @@ def main():
         current_outfit = ""
         current_location = ""
         current_mood = ""
+        body_type = ""
+        body_shape = ""
         
         if os.path.exists(companions_dir):
             # Check local override first
@@ -56,6 +58,8 @@ def main():
                                     current_outfit = data.get("currentOutfit", "").strip()
                                     current_location = data.get("currentLocation", "").strip()
                                     current_mood = data.get("currentMood", "").strip()
+                                    body_type = data.get("bodyType", "").strip().lower()
+                                    body_shape = data.get("bodyShape", "").strip().lower()
                                     print(f"[generate.py] Found LOCAL override sdConfig for {comp_name}! clothingState={clothing_state}", file=sys.stderr)
                                     found = True
                                     break
@@ -76,6 +80,8 @@ def main():
                                     current_outfit = data.get("currentOutfit", "").strip()
                                     current_location = data.get("currentLocation", "").strip()
                                     current_mood = data.get("currentMood", "").strip()
+                                    body_type = data.get("bodyType", "").strip().lower()
+                                    body_shape = data.get("bodyShape", "").strip().lower()
                                     print(f"[generate.py] Found default sdConfig override for {comp_name}! clothingState={clothing_state}", file=sys.stderr)
                                     break
                         except Exception:
@@ -158,9 +164,40 @@ def main():
                 prompt_parts.append("nude, naked, no clothes, bare skin, nudity")
                 print(f"[generate.py] clothingState='{clothing_state}' -> injected nudity into prompt", file=sys.stderr)
         
+        # Inject body parameters if set in companion config
+        if body_type:
+            if body_type.lower() not in description.lower() and body_type.lower() not in pos_prefix.lower():
+                prompt_parts.append(f"body type: {body_type}")
+                print(f"[generate.py] Injected bodyType: '{body_type}'", file=sys.stderr)
+
+        if body_shape:
+            if body_shape.lower() not in description.lower() and body_shape.lower() not in pos_prefix.lower():
+                prompt_parts.append(f"body shape: {body_shape}")
+                print(f"[generate.py] Injected bodyShape: '{body_shape}'", file=sys.stderr)
+
         # Inject custom LoRAs if set in companion config
         loras = sd_config.get("loras", {})
-        if isinstance(loras, dict):
+        if not isinstance(loras, dict):
+            loras = {}
+
+        # Automatic keyword-based LoRA mappings for fantasy / anatomical archetypes
+        body_type_lora_map = {
+            "futanari": ("futanari_v1", 0.85),
+            "elf": ("elf_ears_v1", 0.7),
+            "demon": ("demon_wings_v1", 0.75),
+            "android": ("cybernetics_v1", 0.8),
+            "cyborg": ("cybernetics_v1", 0.8)
+        }
+
+        # Scan bodyType, bodyShape, and prompt description for matching keywords to auto-inject LoRAs
+        search_str = f"{body_type} {body_shape} {description}".lower()
+        for key, (lora_file, weight) in body_type_lora_map.items():
+            if key in search_str:
+                if lora_file not in loras:
+                    loras[lora_file] = weight
+                    print(f"[generate.py] Auto-matched body keyword '{key}' -> injected LoRA: <lora:{lora_file}:{weight}>", file=sys.stderr)
+
+        if loras:
             for lora_name, lora_weight in loras.items():
                 prompt_parts.append(f"<lora:{lora_name}:{lora_weight}>")
 
