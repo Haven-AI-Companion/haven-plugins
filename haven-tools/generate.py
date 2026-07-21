@@ -98,8 +98,19 @@ def main():
         # Inject active location, outfit, and mood from companion state if not already described
         if current_outfit:
             if current_outfit.lower() not in description.lower() and current_outfit.lower() not in pos_prefix.lower():
-                prompt_parts.append(f"wearing {current_outfit}")
-                print(f"[generate.py] Injected active outfit: '{current_outfit}'", file=sys.stderr)
+                outfits_dict = data.get("outfits", {})
+                if outfits_dict and isinstance(outfits_dict, dict):
+                    outfits_lower = {k.lower().strip(): v for k, v in outfits_dict.items() if v}
+                    matched_outfit_prompt = outfits_lower.get(current_outfit.lower().strip())
+                    if matched_outfit_prompt:
+                        prompt_parts.append(matched_outfit_prompt)
+                        print(f"[generate.py] Injected custom mapped outfit '{current_outfit}': '{matched_outfit_prompt}'", file=sys.stderr)
+                    else:
+                        prompt_parts.append(f"wearing {current_outfit}")
+                        print(f"[generate.py] Injected active outfit: '{current_outfit}'", file=sys.stderr)
+                else:
+                    prompt_parts.append(f"wearing {current_outfit}")
+                    print(f"[generate.py] Injected active outfit: '{current_outfit}'", file=sys.stderr)
 
         if current_location:
             if current_location.lower() not in description.lower() and current_location.lower() not in pos_prefix.lower():
@@ -255,7 +266,7 @@ def restore_faces(img_bytes):
             detector_path,
             "",
             (w_orig, h_orig),
-            0.6,
+            0.35,
             0.3,
             5000
         )
@@ -312,7 +323,11 @@ def restore_faces(img_bytes):
             dists = np.sqrt((x_indices - center_x)**2 + (y_indices - center_y)**2)
             mask = 1.0 - (dists / max_dist)
             mask = np.clip(mask * 1.5, 0.0, 1.0)
-            mask = cv2.GaussianBlur(mask, (21, 21), 0)
+            ksize_x = max(3, (crop_w // 4) * 2 + 1)
+            ksize_y = max(3, (crop_h // 4) * 2 + 1)
+            if ksize_x % 2 == 0: ksize_x += 1
+            if ksize_y % 2 == 0: ksize_y += 1
+            mask = cv2.GaussianBlur(mask, (ksize_x, ksize_y), 0)
             mask = np.expand_dims(mask, axis=2)
             
             blended = (crop.astype(np.float32) * (1.0 - mask) + out_face_resized.astype(np.float32) * mask).astype(np.uint8)
