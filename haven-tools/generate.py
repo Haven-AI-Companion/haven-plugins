@@ -116,6 +116,29 @@ def main():
             if current_location.lower() not in description.lower() and current_location.lower() not in pos_prefix.lower():
                 prompt_parts.append(f"in/at {current_location}")
                 print(f"[generate.py] Injected active location: '{current_location}'", file=sys.stderr)
+                
+                # Map location keywords to high-quality ambient lighting/style tags to boost CPU outputs
+                location_lighting_map = {
+                    "bedroom": "soft warm bedroom window lighting, cozy intimate shadows, high photorealism",
+                    "fireplace": "warm cozy glowing fireplace illumination, soft flickering embers, dramatic orange underglow",
+                    "garden": "beautiful outdoor dappled morning sunlight, soft garden bokeh background, natural daylighting",
+                    "cozy": "warm soft ambient light, cozy room aesthetics, gentle cinematic shadows",
+                    "rain": "cool overcast rainy day lighting, soft blue ambient light, wet surfaces, reflections",
+                    "cafe": "cozy warm cafe indoor lighting, soft incandescent glow, background cafe bokeh, realistic textures",
+                    "library": "dramatic dusty library light beams, warm dark academic atmosphere, soft volumetric lighting",
+                    "virtual": "cool neon glow, cyberpunk ambient light, digital terminal backlighting, sci-fi highlights",
+                    "neon": "saturated cyan and magenta neon ambient illumination, reflective surfaces, retro cyberpunk highlight",
+                    "beach": "bright golden hour sunshine, warm sunset ambient glow, realistic ocean breeze atmosphere",
+                    "balcony": "dramatic sunset golden hour lighting, soft outdoor sky lighting, realistic atmosphere",
+                    "peaks": "dramatic sunset golden hour lighting, soft outdoor sky lighting, realistic atmosphere"
+                }
+                
+                loc_lower = current_location.lower()
+                for key, tag in location_lighting_map.items():
+                    if key in loc_lower:
+                        prompt_parts.append(tag)
+                        print(f"[generate.py] Injected location-matched lighting tag: '{tag}'", file=sys.stderr)
+                        break
 
         if current_mood:
             if current_mood.lower() not in description.lower() and current_mood.lower() not in pos_prefix.lower():
